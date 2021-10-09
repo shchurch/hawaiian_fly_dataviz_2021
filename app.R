@@ -4,7 +4,7 @@ library(tidyr)
 library(ggplot2)
 library(gridExtra)
 library(ape)
-#library(qgraph)
+library(ggcorrplot)
 theme_set(theme_classic())
 set.seed(84095)
 load(file="data/genetree_all_dmel_id.RData")
@@ -117,23 +117,17 @@ server <- function(input, output) {
 			xlab("phylogenetic branch")
 
 		tarmat <- target_cormat
-		tarmat[tarmat < 10] <- NA 
-		tarmat[target,] <- target_cormat[target,]
-		tarmat[,target] <- target_cormat[,target]
-		tarmat[target,target] <- NA
 
-		plot_network <- as.ggraph(qgraph(mar=c(0.2,0.2,0.2,0.2),border.width=0.1,tarmat,maximum=1,layout="circle",esize=10,posCol=cor_color_range[3],
-			negCol=cor_color_range[2],labels=colnames(tarmat),color="white",
-			label.font=2,label.scale=F))
+		plot_cor <- ggcorrplot(tarmat, hc.order = TRUE, type = "upper") + viridis::scale_fill_viridis(option="B",limits=c(-1,1),name="correlation") + theme(legend.position="left")
 
 		layout <- rbind(c(1,3),c(2,3),c(4,4),c(5,5),c(6,6),c(6,6))
 
 		t1 <- grid::textGrob("Above is the phylogeny of the 12 species studied here,\nlabeled by phylogenetic branch.\n\nTo the right shows the average expression ratio\nbetween the ovary and carcass for each species\nRed=more ovary expression\nblue=more carcass epxression.",just="left",x=0,y=0.6)
-		t2 <- grid::textGrob("Above shows the distribution of evolutionary changes along each branch in the phylogeny.\nThe black point indicates the selected gene family. Colored points are changes\nin other gene families.\nBelow is the network of genes with a strong evolutionary correlation of expression to the selected gene family.\nFor both panels, orange=strong positive correlation, purple=strong negative correlation.",just="left",x=0,y=0.5)
+		t2 <- grid::textGrob("Above shows the distribution of evolutionary changes along each branch in the phylogeny.\nThe black point indicates the selected gene family. Colored points are changes\nin other gene families.\n\nBelow is the correlation matrix of genes with a strong evolutionary correlation (abs. value > 0.825) of expression\nto the selected gene family.\nFor both panels, orange=yellow positive correlation, purple=strong negative correlation.",just="left",x=0,y=0.5)
 
-		grid.arrange(grobs = list(plot_tree,t1,plot_exp,plot_changes,t2,plot_network), layout_matrix = layout)
+		grid.arrange(grobs = list(plot_tree,t1,plot_exp,plot_changes,t2,plot_cor), layout_matrix = layout)
 		}
-  },height=1100,width=600)
+  },height=1200,width=600)
 
 }
 
