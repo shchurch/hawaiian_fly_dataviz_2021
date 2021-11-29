@@ -118,11 +118,18 @@ server <- function(input, output) {
 
 		tarmat <- target_cormat
 
-		plot_cor <- ggcorrplot(tarmat, hc.order = TRUE, type = "upper") + viridis::scale_fill_viridis(option="B",limits=c(-1,1),name="correlation") + theme(legend.position="left")
+		if(length(tarmat) > 1){
+			plot_cor <- ggcorrplot(tarmat, hc.order = TRUE, type = "upper") + viridis::scale_fill_viridis(option="B",limits=c(-1,1),name="correlation") + theme(legend.position="left")
+		} else {
+			text = paste("\n   No strong correlations found")
+			plot_cor <- ggplot() + 
+  			annotate("text", x = 0, y = 0, size=8, label = text) + 
+  			theme_void()
+		}
 
 		layout <- rbind(c(1,3),c(2,3),c(4,4),c(5,5),c(6,6),c(6,6))
 
-		t1 <- grid::textGrob("Above is the phylogeny of the 12 species studied here,\nlabeled by phylogenetic branch.\n\nTo the right shows the average expression ratio\nbetween the ovary and carcass for each species\nRed=more ovary expression\nblue=more carcass epxression.",just="left",x=0,y=0.6)
+		t1 <- grid::textGrob("Above is the phylogeny of the 12 species studied here,\nlabeled by phylogenetic branch.\n\nTo the right shows the  expression ratio\nbetween the ovary and carcass for each transcript\nRed=more ovary expression\nblue=more carcass epxression.",just="left",x=0,y=0.6)
 		t2 <- grid::textGrob("Above shows the distribution of evolutionary changes along each branch in the phylogeny.\nThe black point indicates the selected gene family. Colored points are changes\nin other gene families.\n\nBelow is the correlation matrix of genes with a strong evolutionary correlation (abs. value > 0.825) of expression\nto the selected gene family.\nFor both panels, orange=yellow positive correlation, purple=strong negative correlation.",just="left",x=0,y=0.5)
 
 		grid.arrange(grobs = list(plot_tree,t1,plot_exp,plot_changes,t2,plot_cor), layout_matrix = layout)
