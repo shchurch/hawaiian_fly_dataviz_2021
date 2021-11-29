@@ -10,7 +10,7 @@ set.seed(84095)
 load(file="data/genetree_all_dmel_id.RData")
 load(file="data/ovary_changes.RData")
 load(file="data/full_correlation_matrix.RData")
-load(file="data/ovary_average_average_ratio.RData")
+load(file="data/ovary_average_ratio.RData")
 source("data/qgraph_as_ggraph.R")
 
 species_names <- c('Drosophila_primaeva','Drosophila_sproati','Drosophila_picticornis','Drosophila_macrothrix','Drosophila_mimica','Drosophila_cfdives','Drosophila_nanella','Scaptomyza_varia','Scaptomyza_cyrtandrae','Scaptomyza_varipicta','Drosophila_atroscutellata','Drosophila_tanythrix')
@@ -85,7 +85,7 @@ server <- function(input, output) {
 	  							na.omit
 	  bias_colors <- setNames(c("red","blue"),c("ovary","carcass"))
 
-		plot_exp <- ggplot(a %>% filter(key == target_genetree),aes(y=factor(sp_code,levels=species_codes[species_order]),x=val,color = bias)) + geom_point(size=3) +
+		plot_exp <- ggplot(ave_ratio_summary %>% filter(genetree == target_genetree),aes(y=factor(sp_code,levels=species_codes[species_order]),x=val,color = bias)) + geom_point(size=3) +
 			scale_color_manual(values = bias_colors) + 
 			geom_vline(xintercept=0,linetype="dashed",size=0.5) + 
 			scale_x_continuous(limits = c(-5,5)) +
