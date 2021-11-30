@@ -104,10 +104,10 @@ server <- function(input, output) {
 			select(-child_node) %>% 
 			cor(.,method="pearson",use="pairwise.complete.obs")
 
-		node_order <- c("13","22","14","23","20","21","15","16","17","19","18","3","2","1","6","5","4","12","11","10","9","8","7")
+		node_order <- c("21","13","22","19","20","14","15","16","18","17","3","2","1","6","5","4","12","11","10","9","8","7")
 
 		plot_tree <- grid::rasterGrob(png::readPNG("data/labeled_ultrametric_tree-01.png"))
-		plot_changes <- ggplot(ovary_changes_cor,aes(x=factor(child_node,levels=node_order),y=scaled_change,group=name,color=correlation)) +
+		plot_changes <- ggplot(ovary_changes_cor,aes(x=factor(branch,levels=node_order),y=scaled_change,group=name,color=correlation)) +
 			viridis::scale_color_viridis(option = "B") + 
 			geom_jitter(size=1.5,pch=16,aes(alpha=abs(correlation))) + 
 			geom_point(data=ovary_changes %>% filter(name == target),color="white",fill="black",size=3,stroke=1,pch=21) + 
