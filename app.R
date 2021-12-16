@@ -1,10 +1,12 @@
 library(shiny)
+library(shinydashboard)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-library(gridExtra)
 library(ape)
 library(ggcorrplot)
+library(png)
+library(viridis)
 theme_set(theme_classic())
 set.seed(84095)
 load(file="data/genetree_all_dmel_id.RData")
@@ -18,124 +20,220 @@ species_id <- c('008D','106A','025A','055A','040C','16_1','002D','CFB','088B','0
 species_codes <- c('Dpri','Dspr','Dpic','Dmac','Dmim','Dcfd','Dnan','Svar','Scyr','Svpt','Datr','Dtan');names(species_codes) <- species_names
 species_order <-  c('Drosophila_primaeva','Drosophila_mimica','Drosophila_nanella','Drosophila_atroscutellata','Drosophila_tanythrix','Drosophila_cfdives','Drosophila_sproati','Drosophila_macrothrix','Drosophila_picticornis','Scaptomyza_cyrtandrae','Scaptomyza_varipicta','Scaptomyza_varia')
 
-
 selected_gene_families <- c("Yp1;Yp2;Yp3","Octbeta1R;Octbeta2R","Doa","Haspin","nos")
 gene_family_names <- genetree_all_dmel_id %>% filter(genetree %in% rownames(full_cormat)) %>% filter(!name %in% selected_gene_families) %>% pull(name) %>% unique %>% sort
 
 gene_family_names <- c(selected_gene_families,gene_family_names)
 
-
-# Define UI for miles per gallon app ----
-ui <- pageWithSidebar(
-
-  # App title ----
-  headerPanel("Evolutionary changes in ovary-biased expression across 12 species of Hawaiian Drosophilidae flies"),
-
-  # Sidebar panel for inputs ----
-  sidebarPanel(
-
-  		helpText("This R::Shiny app allows you to explore the correlation of evolutionary changes in the ovary-biased expression using RNA sequence data from twelve species of Hawaiian Drosophilidae flies.  You can select any gene family for which to display expression data."),
-  		selectizeInput(inputId="variable",choices=gene_family_names,label="Select a family of genes",options = list(create = TRUE)),
-  		helpText("Note: not all gene families will be represented. For the purposes of this app we have restricted to only gene families represented in all the datasets of twelve species."),
-  		helpText("Gene families have been defined as groups of homologous genes, as inferred with the software agalma (https://bitbucket.org/caseywdunn/agalma), which uses sequence similarity to cluster genes."),
-
+ui <- dashboardPage(skin="black",
+  dashboardHeader(title="Evolutionary changes in ovary-biased expression across 12 species of Hawaiian Drosophilidae flies",titleWidth = 1000),
+  dashboardSidebar(
+    selectizeInput(inputId="variable",choices=gene_family_names,label="Select a gene or gene group",options = list(create = TRUE)),
+    div(style="padding-left:10px;width:90%;text-align:left","Genes have been grouped together by homology, as inferred with the software agalma (bitbucket.org/caseywdunn), which uses sequence similarity to cluster genes.",br(),br(),"Note: not all genes will be represented. For the purposes of this app we have restricted to only genes represented in all the datasets of twelve species.")
   ),
-    # Main panel for displaying outputs ----
-    mainPanel(
-      # Output: Plot of the requested variable against mpg ----
-      plotOutput("qplot")
+  dashboardBody(
+    tags$script("document.getElementsByClassName('sidebar-toggle')[0].style.visibility = 'hidden';"),
+    tags$head(tags$style(
+        type="text/css",
+        "#dissection img {max-width: 100%; width: 100%; padding: 10px; height: auto: middle}",
+        "#plot_tree img {max-width: 100%; width: 100%; padding: 10px; height: auto}",
+        "#cor_legend img {max-width: 75%; width: 100%; padding: 10px; height: auto}"
+    )),
+    fixedRow(
+      column(width=4,
+        box(
+          #height=485,
+          width = NULL,
+          HTML('<h2>Overview</h1>This R::Shiny app allows you to explore the correlation of evolutionary changes in the ovary-biased expression using RNA sequence data from twelve species of Hawaiian Drosophilidae flies. You can select any gene  for which to display expression data. To generate this dataset, we generated RNA sequence datasets from 12 species of Hawaiian flies, and compared them using phylogenetic methods. Check out our paper describing these data and analyses <a href="https://doi.org/10.1101/2021.11.30.470652">here</a>.')
+        ),
+        box(
+          solidHeader=TRUE,
+          width=NULL,
+          height=330,
+          imageOutput(outputId="dissection")
+        ),
+      ),
+      column(width=3,
+        box(
+          solidHeader=TRUE,
+          width=NULL,
+          imageOutput(outputId="plot_tree")
+        ),
+        box(
+          width = NULL,
+          HTML("<h4>Evolutionary tree</h4>The phylogeny of the twelve species studied here, numbered by branch.")
+        )
+      ),
+      column(width=5,
+        box(
+          width=NULL,
+          solidHeader=TRUE,
+          plotOutput(outputId="plot_exp")
+        ),
+        box(
+          width = NULL,
+          HTML('<p><h4>Figure 1</h4>The expression ratio between the ovary and carcass for each transcript.<br/><span style="color: red">Red</span> = expressed more in the ovary, <span style="color: blue">Blue</span>  = expressed more in the carcass.</p>')
+        )
+      )
+    ),
+    fixedRow(
+      column(width=7,
+        box(
+          #title="Expression changes",
+          width = NULL,
+          solidHeader=TRUE,
+          #status="primary",
+          plotOutput(outputId="plot_changes")
+        ),
+        box(
+          width = NULL,
+          HTML("<p><h4>Figure 2</h4>The distribution of evolutionary changes in expression bias along each branch in the phylogeny. The black point indicates the selected gene. Other points are changes in other genes, colored by strength and direction of correlation.")
+        )
+      ),
+      column(width=2,
+        box(
+          solidHeader=TRUE,
+          width=NULL,
+          imageOutput(outputId="cor_legend")
+        ),
+        box(
+          width = NULL,
+          "Legend for both correlation plots."
+        )
+      ),
+      column(width=3,
+        box(
+          #title="Expression correlation",
+          width = NULL,
+          solidHeader=TRUE,
+          #status="primary",
+          plotOutput(outputId="plot_cor")
+        ),
+        box(
+          width = NULL,
+          HTML("<h4>Figure 3</h4>Correlation heatmap for genes with a strong evolutionary correlation (abs. value > 0.825) of expression to the selected gene.")
+        )
+      ),
 
     )
+  )
 )
 
-# Data pre-processing ----
-# Tweak the "am" variable to have nicer factor labels -- since this
-# doesn't rely on any user inputs, we can do this once at startup
-# and then use the value throughout the lifetime of the app
+server <- function(input, output) { 
 
+  output$dissection <- renderImage({
+    return(list(
+      src="data/dissection-01.png",
+      contentType="image/png",
+      Alt="dissection diagram"))
+  },deleteFile=FALSE)
 
-cor_color_option <- "B"
-cor_color_range <- viridis::viridis(option=cor_color_option,n=4)
+  output$cor_legend <- renderImage({
+    return(list(
+      src="data/correlation_legend-01.png",
+      contentType="image/png",
+      Alt="correlation legend"))
+  },deleteFile=FALSE)
 
+  output$plot_tree <- renderImage({
+    return(list(
+      src="data/labeled_ultrametric_tree-01.png",
+      contentType="image/png",
+      Alt="species tree"))
+  },deleteFile=FALSE)
+ 
+  output$plot_exp <- renderPlot({
+    target <- input$variable
+    if(target %in% genetree_all_dmel_id$name){
+      target_genetree <- genetree_all_dmel_id %>% 
+        filter(name == target) %>% 
+        pull(genetree) %>% unique
+      ovary_changes_cor <- left_join(ovary_changes,
+        data.frame(key = names(full_cormat[target_genetree,]),
+          correlation = full_cormat[target_genetree,]),by="key") %>% 
+        na.omit
+      bias_colors <- setNames(c("red","blue"),c("ovary","carcass"))
 
-# Define server logic to plot various variables against mpg ----
-server <- function(input, output) {
-
-  # Compute the formula text ----
-  # This is in a reactive expression since it is shared by the
-  # output$caption and output$mpgPlot functions
-  target_genetree <- reactive({
-    #target <- input$variable
-	#target_all_dmel <- dmel_seqs %>% filter(grepl(target,name))
-	#target_parent_gene <- dmel_seqs %>% filter(name == target) %>% pull(parent_gene) %>% .[1] 
-	#target_genetree <- genetree_dmel_id %>% filter(parent_gene == target_parent_gene) %>% pull(genetree) %>% unique
-	#target_name <- genetree_all_dmel_id %>% filter(genetree == target_genetree) %>% pull(name)
-	
+      plot_exp <- ggplot(ave_ratio_summary %>% filter(genetree == target_genetree),aes(y=factor(sp_code,levels=species_codes[species_order]),x=val,color = bias)) + geom_point(size=3) +
+        scale_color_manual(values = bias_colors) + 
+        geom_vline(xintercept=0,linetype="dashed",size=0.5) + 
+        scale_x_continuous(limits = c(-5,5)) +
+        ggtitle(paste("expression bias of ",target," transcripts",sep="")) +
+        theme(plot.title = element_text(hjust = 0.5)) +
+        theme(text = element_text(size=15)) +
+        theme(axis.title.y = element_blank()) +
+        theme(axis.title.x = element_blank()) +
+        theme(legend.position="none") 
+      plot_exp
+    }
   })
 
-  # Generate a plot of the requested variable against mpg ----
-  # and only exclude outliers if requested
-  output$qplot <- renderPlot({
+  output$plot_changes <- renderPlot({
+    target <- input$variable
+    if(target %in% genetree_all_dmel_id$name){
+      target_genetree <- genetree_all_dmel_id %>% 
+        filter(name == target) %>% 
+        pull(genetree) %>% unique
+      ovary_changes_cor <- left_join(ovary_changes,
+        data.frame(key = names(full_cormat[target_genetree,]),
+          correlation = full_cormat[target_genetree,]),by="key") %>% 
+        na.omit
+      correlation_threshold <- 0.825
+      target_changes <- ovary_changes_cor %>% filter(abs(correlation) > correlation_threshold)
+      target_cormat <- target_changes %>% select(name,child_node,scaled_change) %>% 
+        spread(.,name,scaled_change)  %>% 
+        select(-child_node) %>% 
+        cor(.,method="pearson",use="pairwise.complete.obs")
 
-	target <- input$variable
-  if(target %in% genetree_all_dmel_id$name){
-	  target_genetree <- genetree_all_dmel_id %>% filter(name == target) %>% pull(genetree) %>% unique
-	  ovary_changes_cor <- left_join(ovary_changes,data.frame(key = names(full_cormat[target_genetree,]),
-	  															correlation = full_cormat[target_genetree,]),by="key") %>% 
-	  							na.omit
-	  bias_colors <- setNames(c("red","blue"),c("ovary","carcass"))
+      node_order <- c("21","13","22","19","20","14","15","16","18","17","3","2","1","6","5","4","12","11","10","9","8","7")
 
-		plot_exp <- ggplot(ave_ratio_summary %>% filter(genetree == target_genetree),aes(y=factor(sp_code,levels=species_codes[species_order]),x=val,color = bias)) + geom_point(size=3) +
-			scale_color_manual(values = bias_colors) + 
-			geom_vline(xintercept=0,linetype="dashed",size=0.5) + 
-			scale_x_continuous(limits = c(-5,5)) +
-			ggtitle("ovary:carcass bias") +
-			theme(plot.title = element_text(hjust = 0.5)) +
-			theme(text = element_text(size=15)) +
-			theme(axis.title.y = element_blank()) +
-			theme(axis.title.x = element_blank()) +
-			theme(legend.position="none") 
+      plot_changes <- ggplot(ovary_changes_cor,aes(x=factor(branch,levels=node_order),y=scaled_change,group=name,color=correlation)) +
+        viridis::scale_color_viridis(option = "B") + 
+        geom_jitter(size=1.5,pch=16,aes(alpha=abs(correlation))) + 
+        geom_point(data=ovary_changes %>% filter(name == target),color="white",fill="black",size=3,stroke=1,pch=21) + 
+        theme(legend.position="none") + 
+        theme(text = element_text(size=10)) +
+        ylab("scaled evolutionary\nchange") + 
+        xlab("phylogenetic branch")
 
+      plot_changes
+    }
+  })
 
-		correlation_threshold <- 0.825
-		target_changes <- ovary_changes_cor %>% filter(abs(correlation) > correlation_threshold)
-		target_cormat <- target_changes %>% select(name,child_node,scaled_change) %>% 
-			spread(.,name,scaled_change)  %>% 
-			select(-child_node) %>% 
-			cor(.,method="pearson",use="pairwise.complete.obs")
+  output$plot_cor <- renderPlot({
+    target <- input$variable
+    if(target %in% genetree_all_dmel_id$name){
+      target_genetree <- genetree_all_dmel_id %>% 
+        filter(name == target) %>% 
+        pull(genetree) %>% unique
+      ovary_changes_cor <- left_join(ovary_changes,
+        data.frame(key = names(full_cormat[target_genetree,]),
+          correlation = full_cormat[target_genetree,]),by="key") %>% 
+        na.omit
+      correlation_threshold <- 0.825
+      target_changes <- ovary_changes_cor %>% filter(abs(correlation) > correlation_threshold)
+      target_cormat_head <- target_changes %>% filter(name == target) %>% 
+        select(name,child_node,scaled_change) %>% 
+        spread(.,name,scaled_change)  %>% 
+        select(-child_node)
+      target_cormat_tail <- target_changes %>% filter(name != target) %>% 
+        select(name,child_node,scaled_change) %>% 
+        spread(.,name,scaled_change)  %>% 
+        select(-child_node)
 
-		node_order <- c("21","13","22","19","20","14","15","16","18","17","3","2","1","6","5","4","12","11","10","9","8","7")
-
-		plot_tree <- grid::rasterGrob(png::readPNG("data/labeled_ultrametric_tree-01.png"))
-		plot_changes <- ggplot(ovary_changes_cor,aes(x=factor(branch,levels=node_order),y=scaled_change,group=name,color=correlation)) +
-			viridis::scale_color_viridis(option = "B") + 
-			geom_jitter(size=1.5,pch=16,aes(alpha=abs(correlation))) + 
-			geom_point(data=ovary_changes %>% filter(name == target),color="white",fill="black",size=3,stroke=1,pch=21) + 
-			theme(legend.position="none") + 
-			theme(text = element_text(size=10)) +
-			ylab("scaled evolutionary\nchange") + 
-			xlab("phylogenetic branch")
-
-		tarmat <- target_cormat
-
-		if(length(tarmat) > 1){
-			plot_cor <- ggcorrplot(tarmat, hc.order = TRUE, type = "upper") + viridis::scale_fill_viridis(option="B",limits=c(-1,1),name="correlation") + theme(legend.position="left")
-		} else {
-			text = paste("\n   No strong correlations found")
-			plot_cor <- ggplot() + 
-  			annotate("text", x = 0, y = 0, size=8, label = text) + 
-  			theme_void()
-		}
-
-		layout <- rbind(c(1,3),c(2,3),c(4,4),c(5,5),c(6,6),c(6,6))
-
-		t1 <- grid::textGrob("Above is the phylogeny of the 12 species studied here,\nlabeled by phylogenetic branch.\n\nTo the right shows the  expression ratio\nbetween the ovary and carcass for each transcript\nRed=more ovary expression\nblue=more carcass epxression.",just="left",x=0,y=0.6)
-		t2 <- grid::textGrob("Above shows the distribution of evolutionary changes along each branch in the phylogeny.\nThe black point indicates the selected gene family. Colored points are changes\nin other gene families.\n\nBelow is the correlation matrix of genes with a strong evolutionary correlation (abs. value > 0.825) of expression\nto the selected gene family.\nFor both panels, orange=yellow positive correlation, purple=strong negative correlation.",just="left",x=0,y=0.5)
-
-		grid.arrange(grobs = list(plot_tree,t1,plot_exp,plot_changes,t2,plot_cor), layout_matrix = layout)
-		}
-  },height=1200,width=600)
-
+      if(length(target_cormat_tail) > 0){
+        target_cormat <- cbind(target_cormat_tail,target_cormat_head) %>% 
+          cor(.,method="pearson",use="pairwise.complete.obs")
+        plot_cor <- ggcorrplot(target_cormat, hc.order = FALSE,type="upper",show.legend=F) + scale_fill_viridis(option="B",limits=c(-1,1),name="correlation")
+      } else {
+        text = paste("\n   No strong correlations found")
+        plot_cor <- ggplot() + 
+          annotate("text", x = 0, y = 0, size=8, label = text) + 
+          theme_void()
+      }
+      plot_cor
+    }    
+  })
 }
 
 shinyApp(ui, server)
