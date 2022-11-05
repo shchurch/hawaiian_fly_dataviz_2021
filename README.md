@@ -1,10 +1,13 @@
 # hawaiian_fly_dataviz_2021
-** this app is currently under development **
 
-This repository contains a data visualization to accompany the Hawaiian Drosophilidae expression study
-located in the repostiory https://github.com/shchurch/hawaiian_drosophilidae_expression_2021.
+The data visualization is hosted publically at https://shchurch.shinyapps.io/hawaiian_fly_dataviz_2021
+At that site you can access and query the dataset of gene expression evolution across Hawaiian flies
 
-This data visualization is an `R::shiny` app. It can be accessed through R, by following these steps:
+The data visualization accompanies our study of gene expression evolution in Hawaiian Drosophilidae flies,
+as described in the following preprint: https://doi.org/10.1101/2021.11.30.470652
+and located in the repostiory https://github.com/shchurch/hawaiian_drosophilidae_expression_2021.
+
+This data visualization is an `R::shiny` app. It can be accessed locally through R, by following these steps:
 
 ## Dependencies
 These dependencies must be installed:
@@ -18,6 +21,8 @@ install.packages("ggplot2")
 install.packages("ggcorrplot")
 install.packages("gridExtra")
 install.packages("ape")
+install.packages("viridis")
+install.pacakges("png")
 ```
 
 ## Run the app
@@ -26,10 +31,5 @@ library(shiny)
 runGitHub("hawaiian_fly_dataviz_2021","shchurch",ref="main")
 ```
 
-## Preview
-The data visualization will be sent to your browser.
-It works as seen in the following video:
-
-https://user-images.githubusercontent.com/4249148/136675568-56f87908-1b18-4a5b-8ba8-070d84963c62.mov
 
 
