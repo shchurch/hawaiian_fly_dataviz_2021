@@ -12,6 +12,7 @@ set.seed(84095)
 load(file="data/genetree_all_dmel_id.RData")
 load(file="data/ovary_changes.RData")
 load(file="data/full_correlation_matrix.RData")
+load(file="data/no_outliers_correlation_matrix.RData")
 load(file="data/ovary_average_ratio.RData")
 source("data/qgraph_as_ggraph.R")
 
@@ -29,7 +30,8 @@ ui <- dashboardPage(skin="black",
   dashboardHeader(title="Evolutionary changes in ovary-biased expression across 12 species of Hawaiian Drosophilidae flies",titleWidth = 1000),
   dashboardSidebar(
     selectizeInput(inputId="variable",choices=gene_family_names,label="Select a gene or gene group",options = list(create = TRUE)),
-    div(style="padding-left:10px;width:90%;text-align:left","Genes have been grouped together by homology, as inferred with the software agalma (bitbucket.org/caseywdunn), which uses sequence similarity to cluster genes.",br(),br(),"Note: not all genes will be represented. For the purposes of this app we have restricted to only genes represented in all the datasets of twelve species.")
+    div(style="padding-left:10px;width:90%;text-align:left","Genes have been grouped together by homology, as inferred with the software agalma (bitbucket.org/caseywdunn), which uses sequence similarity to cluster genes.",br(),br(),"Note: not all genes will be represented. For the purposes of this app we have restricted to only genes represented in all the datasets of twelve species."),
+    checkboxInput(inputId="checkbox",label = "filter outliers before calculating correlations",value = FALSE)
   ),
   dashboardBody(
     tags$script("document.getElementsByClassName('sidebar-toggle')[0].style.visibility = 'hidden';"),
@@ -143,17 +145,29 @@ server <- function(input, output) {
   },deleteFile=FALSE)
  
   output$plot_exp <- renderPlot({
+    check <- input$checkbox   
+    if(check == TRUE){
+      cormat <- cormat_no_outliers
+    } else {
+      cormat <- full_cormat
+    }
+
     target <- input$variable
     if(target %in% genetree_all_dmel_id$name){
       target_genetree <- genetree_all_dmel_id %>% 
         filter(name == target) %>% 
         pull(genetree) %>% unique
+    }
+  
+    if(any(target_genetree %in% rownames(cormat))){
+  
       ovary_changes_cor <- left_join(ovary_changes,
-        data.frame(key = names(full_cormat[target_genetree,]),
-          correlation = full_cormat[target_genetree,]),by="key") %>% 
+        data.frame(key = names(cormat[target_genetree,]),
+        correlation = cormat[target_genetree,]),by="key") %>% 
         na.omit
       bias_colors <- setNames(c("red","blue"),c("ovary","carcass"))
-
+    
+  
       plot_exp <- ggplot(ave_ratio_summary %>% filter(genetree == target_genetree),aes(y=factor(sp_code,levels=species_codes[species_order]),x=val,color = bias)) + geom_point(size=3) +
         scale_color_manual(values = bias_colors) + 
         geom_vline(xintercept=0,linetype="dashed",size=0.5) + 
@@ -165,18 +179,34 @@ server <- function(input, output) {
         theme(axis.title.x = element_blank()) +
         theme(legend.position="none") 
       plot_exp
+
+    } else {
+      text = paste("\n   gene family not present in dataset")
+      ggplot() + annotate("text", x = 0, y = 0, size=6, label = text) + 
+        theme_void()      
     }
   })
 
   output$plot_changes <- renderPlot({
+    check <- input$checkbox   
+    if(check == TRUE){
+      cormat <- cormat_no_outliers
+    } else {
+      cormat <- full_cormat
+    }
+
     target <- input$variable
     if(target %in% genetree_all_dmel_id$name){
       target_genetree <- genetree_all_dmel_id %>% 
         filter(name == target) %>% 
         pull(genetree) %>% unique
+    }
+  
+    if(any(target_genetree %in% rownames(cormat))){
+  
       ovary_changes_cor <- left_join(ovary_changes,
-        data.frame(key = names(full_cormat[target_genetree,]),
-          correlation = full_cormat[target_genetree,]),by="key") %>% 
+        data.frame(key = names(cormat[target_genetree,]),
+          correlation = cormat[target_genetree,]),by="key") %>% 
         na.omit
       correlation_threshold <- 0.825
       target_changes <- ovary_changes_cor %>% filter(abs(correlation) > correlation_threshold)
@@ -195,20 +225,35 @@ server <- function(input, output) {
         theme(text = element_text(size=10)) +
         ylab("scaled evolutionary\nchange") + 
         xlab("phylogenetic branch")
-
       plot_changes
+
+    } else {
+      text = paste("\n   gene family not present in dataset")
+      ggplot() + annotate("text", x = 0, y = 0, size=6, label = text) + 
+        theme_void()      
     }
   })
 
   output$plot_cor <- renderPlot({
+    check <- input$checkbox   
+    if(check == TRUE){
+      cormat <- cormat_no_outliers
+    } else {
+      cormat <- full_cormat
+    }
+
     target <- input$variable
     if(target %in% genetree_all_dmel_id$name){
       target_genetree <- genetree_all_dmel_id %>% 
         filter(name == target) %>% 
         pull(genetree) %>% unique
+    }
+  
+    if(any(target_genetree %in% rownames(cormat))){
+  
       ovary_changes_cor <- left_join(ovary_changes,
-        data.frame(key = names(full_cormat[target_genetree,]),
-          correlation = full_cormat[target_genetree,]),by="key") %>% 
+        data.frame(key = names(cormat[target_genetree,]),
+          correlation = cormat[target_genetree,]),by="key") %>% 
         na.omit
       correlation_threshold <- 0.825
       target_changes <- ovary_changes_cor %>% filter(abs(correlation) > correlation_threshold)
@@ -232,7 +277,12 @@ server <- function(input, output) {
           theme_void()
       }
       plot_cor
-    }    
+
+    } else {
+      text = paste("\n   gene family not present in dataset")
+      ggplot() + annotate("text", x = 0, y = 0, size=6, label = text) + 
+        theme_void()      
+    }
   })
 }
 
