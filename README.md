@@ -31,5 +31,13 @@ library(shiny)
 runGitHub("hawaiian_fly_dataviz_2021","shchurch",ref="main")
 ```
 
+## development
+
+Deploy the app to `shinyapps.io`
+
+```
+library(rsconnect)
+deployApp()
+```
 
 
