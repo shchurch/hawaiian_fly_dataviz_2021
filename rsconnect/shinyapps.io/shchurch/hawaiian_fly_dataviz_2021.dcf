@@ -5,7 +5,7 @@ account: shchurch
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 5310543
-bundleId: 6479608
+bundleId: 6691694
 url: https://shchurch.shinyapps.io/hawaiian_fly_dataviz_2021/
-when: 1667674640.768
-lastSyncTime: 1667674640.76801
+when: 1672716839.63234
+lastSyncTime: 1672716839.63236

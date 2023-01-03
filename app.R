@@ -30,7 +30,7 @@ ui <- dashboardPage(skin="black",
   dashboardHeader(title="Evolutionary changes in ovary-biased expression across 12 species of Hawaiian Drosophilidae flies",titleWidth = 1000),
   dashboardSidebar(
     selectizeInput(inputId="variable",choices=gene_family_names,label="Select a gene or gene group",options = list(create = TRUE)),
-    div(style="padding-left:10px;width:90%;text-align:left","Genes have been grouped together by homology, as inferred with the software agalma (bitbucket.org/caseywdunn), which uses sequence similarity to cluster genes.",br(),br(),"Note: not all genes will be represented. For the purposes of this app we have restricted to only genes represented in all the datasets of twelve species."),
+    div(style="padding-left:10px;width:90%;text-align:left","Genes have been grouped together by homology, as inferred with the software agalma (bitbucket.org/caseywdunn), which uses sequence similarity to cluster genes.",br(),br(),"Note: not all genes will be represented. For the purposes of this app we have restricted to only genes represented in all the datasets of twelve species.",br(),br(),"The dataset can be filtered to remove low-confidence outliers (260 gene families with estimated changes in expression greater than two standard deviations from the mean). Removing these outliers results in more conservative network estimates, but also means that some gene families will have no resulting relationships to display."),
     checkboxInput(inputId="checkbox",label = "filter outliers before calculating correlations",value = FALSE)
   ),
   dashboardBody(
@@ -46,7 +46,7 @@ ui <- dashboardPage(skin="black",
         box(
           #height=485,
           width = NULL,
-          HTML('<h2>Overview</h1>This R::Shiny app allows you to explore the correlation of evolutionary changes in the ovary-biased expression using RNA sequence data from twelve species of Hawaiian Drosophilidae flies. You can select any gene  for which to display expression data. To generate this dataset, we generated RNA sequence datasets from 12 species of Hawaiian flies, and compared them using phylogenetic methods. Check out our paper describing these data and analyses <a href="https://doi.org/10.1101/2021.11.30.470652">here</a>.')
+          HTML('<h2>Overview</h1>This R::Shiny app allows you to explore the correlation of evolutionary changes in the ovary-biased expression using RNA sequence data from twelve species of Hawaiian Drosophilidae flies. You can select any gene for which to display expression data. To generate this dataset, we generated RNA sequence datasets from 12 species of Hawaiian flies, and compared them using phylogenetic methods. Check out our paper describing these data and analyses <a href="https://doi.org/10.1101/2021.11.30.470652">here</a>.')
         ),
         box(
           solidHeader=TRUE,
